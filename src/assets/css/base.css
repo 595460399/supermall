@@ -2,7 +2,6 @@
 
 /*:root -> 获取根元素html*/
 :root {
-  /*定义一些变量*/
   --color-text: #666;
   --color-high-text: #ff5777;
   --color-tint: #ff8198;
@@ -28,12 +27,7 @@ body {
   /* rem vw/vh */
   width: 100vw;
 }
-html{
-  touch-action: none; /* 禁止默认选中滑动 */
-}
-ul{
-  list-style: none;
-}
+
 a {
   color: var(--color-text);
   text-decoration: none;
@@ -60,3 +54,4 @@ a {
 .right {
   float: right;
 }
+
