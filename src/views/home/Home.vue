@@ -3,6 +3,13 @@
     <NavBar class="home-nav">
       <div slot="center">购物街</div>
     </NavBar>
+    <TabControl
+      :titles="['流行', '新款', '精选']"
+      @tabClick="tabClick"
+      ref="tabControl1"
+      class="tab-control"
+      v-show="isTabFixed"
+    ></TabControl>
     <Scroll
       class="content"
       ref="scroll"
@@ -20,11 +27,11 @@
       <TabControl
         :titles="['流行', '新款', '精选']"
         @tabClick="tabClick"
-        ref="tabControl"
+        ref="tabControl2"
       ></TabControl>
       <GoodsList :goods="showGoods"></GoodsList>
     </Scroll>
-    <BackTop @click.native="backClick" v-show="isShow"></BackTop>
+    <BackTop @click.native="backClick" v-show="isShowBackTop"></BackTop>
   </div>
 </template>
 
@@ -36,11 +43,11 @@ import FeatureView from './components/FeatureView.vue'
 import TabControl from '../../components/content/tabControl/TabControl.vue'
 import GoodsList from '../../components/content/goods/GoodsList.vue'
 import Scroll from '../../components/common/scroll/Scroll.vue'
-import BackTop from '../../components/content/backTop/BackTop.vue'
 import { getHomeMultidata, getHomeGoods } from '../../network/home'
-import { debounce } from '../../common/utils'
+import { itemListenerMixin, backTopMixin } from '../../common/mixin'
 export default {
   name: 'Home',
+  mixins: [itemListenerMixin, backTopMixin],
   components: {
     NavBar,
     HomeSwiper,
@@ -48,8 +55,7 @@ export default {
     FeatureView,
     TabControl,
     GoodsList,
-    Scroll,
-    BackTop
+    Scroll
   },
   data() {
     return {
@@ -61,8 +67,9 @@ export default {
         sell: { page: 0, list: [] }
       },
       currentType: 'pop',
-      isShow: false,
-      tabOffsetTop: 0
+      tabOffsetTop: 0,
+      isTabFixed: false,
+      saveY: 0
     }
   },
   computed: {
@@ -76,11 +83,14 @@ export default {
     this.getHomeGoods('new')
     this.getHomeGoods('sell')
   },
-  mounted() {
-    const refresh = debounce(this.$refs.scroll.refresh, 500)
-    this.$bus.$on('itemImageLoad', () => {
-      refresh()
-    })
+  mounted() {},
+  activated() {
+    this.$refs.scroll.refresh()
+    this.$refs.scroll.scrollTo(0, this.saveY, 0)
+  },
+  deactivated() {
+    this.saveY = this.$refs.scroll.getScrollY()
+    this.$bus.$off('itemImgLoad', this.ItemImgListener)
   },
   methods: {
     //event
@@ -98,14 +108,17 @@ export default {
           this.currentType = 'sell'
           break
       }
+      this.$refs.tabControl1.currentIndex = index
+      this.$refs.tabControl2.currentIndex = index
     },
 
-    backClick() {
-      this.$refs.scroll.scrollTo(0, 0)
-    },
     contentScroll(position) {
       // console.log(position)
-      this.isShow = position.y < -1000
+      this.isShowBackTo = position.y < -800
+      // this.isTabFixed = position.y < -543
+      this.isTabFixed = position.y < -this.tabOffsetTop
+      // console.log(position.y, this.tabOffsetTop)
+      this.listenShowBackTop(position)
     },
     loadMore() {
       // console.log('loading')
@@ -128,8 +141,8 @@ export default {
       })
     },
     swiperImageLoad() {
-      this.tabOffsetTop = this.$refs.tabControl.$el.offsetTop
-      console.log(this.tabOffsetTop)
+      this.tabOffsetTop = this.$refs.tabControl2.$el.offsetTop
+      // console.log(this.tabOffsetTop)
     }
   }
 }
@@ -137,18 +150,18 @@ export default {
 
 <style lang="less" scoped>
 #home {
-  padding-top: 44px;
+  // padding-top: 44px;
   height: 100vh;
   position: relative;
 }
 .home-nav {
   background-color: var(--color-tint);
   color: white;
-  position: fixed;
-  left: 0;
-  right: 0;
-  top: 0;
-  z-index: 9;
+  // position: fixed;
+  // left: 0;
+  // right: 0;
+  // top: 0;
+  // z-index: 9;
 }
 
 .content {
@@ -158,5 +171,10 @@ export default {
   bottom: 49px;
   left: 0;
   right: 0;
+}
+
+.tab-control {
+  position: relative;
+  z-index: 9;
 }
 </style>
